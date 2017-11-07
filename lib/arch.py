@@ -1,10 +1,32 @@
 import tensorflow as tf
+from . import utils
 
 def initialize_weights(shape, stddev):
     return tf.Variable(tf.truncated_normal(shape, stddev=stddev))
 
 def initialize_biases(shape, value):
     return tf.Variable(tf.constant(value, shape=shape))
+
+def spatial_replication_padding(x, stride, output_shape, filter_shape):
+    _, in_height, in_width, chan = utils.tensor_shape(x)
+    _, out_height, out_width, chan = output_shape
+    filter_height, filter_width = filter_shape
+
+    total_padding_height = (out_height * stride + filter_height - 1) - in_height
+    total_padding_width = (out_width * stride + filter_width - 1) - in_width
+
+    padding_top = total_padding_height // 2
+    padding_bottom = total_padding_height - padding_top
+    padding_left = total_padding_width // 2
+    padding_right = total_padding_width - padding_left
+    paddings = [padding_top, padding_bottom, padding_left, padding_right]
+    while max(paddings) > 0:
+        new_paddings = [max(0, p - 1) for p in paddings]
+        deltas = [o - n for o, n in zip(paddings, new_paddings)]
+        step_paddings = [[0, 0], [deltas[0], deltas[1]], [deltas[2], deltas[3]], [0, 0]]
+        x = tf.pad(x, step_paddings, mode='SYMMETRIC')
+        paddings = new_paddings
+
 
 def conv2d(x, W, stride, border_mode='SAME'):
     return tf.nn.conv2d(x, W, [1, stride, stride, 1], padding=border_mode)
