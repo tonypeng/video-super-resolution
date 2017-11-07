@@ -29,7 +29,7 @@ def spatial_replication_padding(x, stride, output_shape, filter_shape):
 
 
 def conv2d(x, W, stride, border_mode='SAME'):
-    return tf.nn.conv2d(x, W, [1, stride, stride, 1], padding=border_mode)
+    return tf.nn.conv2d(x, W, [1, stride, stride, 1], border_mode)
 
 def deconv2d(x, W, stride, output_shape, border_mode='SAME'):
     return tf.nn.conv2d_transpose(x, W, output_shape, [1, stride, stride, 1], padding=border_mode)
@@ -37,7 +37,7 @@ def deconv2d(x, W, stride, output_shape, border_mode='SAME'):
 def resizeconv2d(x, W, stride):
     x_size = x.get_shape().as_list()
     resized_height, resized_width = x_size[1] * stride * stride, x_size[2] * stride * stride
-    x_resized = tf.image.resize_images(x, resized_height, resized_width, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+    x_resized = tf.image.resize_images(x, (resized_height, resized_width), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
     W_T = tf.transpose(W, perm=[0, 1, 3, 2])
     return conv2d(x_resized, W_T, stride, border_mode='SAME')
 
@@ -55,7 +55,7 @@ def resid_block(x, W1, W2, activation, channels):
     act1 = activation(conv1)
 
     conv2 = conv2d(act1, W2, 1)
-    conv2 = activation(conv2, channels)
+    conv2 = activation(conv2)
 
     return conv2 + x
 

@@ -1,3 +1,6 @@
+# VGG-19 model
+models/vgg/imagenet-vgg-verydeep-19.mat
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

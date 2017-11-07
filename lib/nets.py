@@ -6,10 +6,10 @@ from . import arch, utils
 _STD_DEV = 0.1
 
 def SingleFrameSR(x):
-    x_pad = arch.spatial_replication_padding(x, 1, utils.tensor_shape(x), (9, 9))
+    #x_pad = arch.spatial_replication_padding(x, 1, utils.tensor_shape(x), (9, 9))
     chan_conv1 = 32
     W_conv1 = arch.initialize_weights([9, 9, 3, chan_conv1], _STD_DEV)
-    conv1 = arch.conv2d(x_pad, W_conv1, 1, border_mode='VALID')
+    conv1 = arch.conv2d(x, W_conv1, 1)
     conv1 = arch.instance_normalization(conv1, chan_conv1)
     act1 = tf.nn.elu(conv1)
 
@@ -26,24 +26,24 @@ def SingleFrameSR(x):
     act3 = tf.nn.elu(conv3)
 
     W_resid1_1, W_resid1_2 = (
-        arch.initialize_weights([3, 3, chan_conv3], _STD_DEV),
-        arch.initialize_weights([3, 3, chan_conv3], _STD_DEV))
+        arch.initialize_weights([3, 3, chan_conv3, chan_conv3], _STD_DEV),
+        arch.initialize_weights([3, 3, chan_conv3, chan_conv3], _STD_DEV))
     resid1 = arch.resid_block(act3, W_resid1_1, W_resid1_2, tf.nn.elu, chan_conv3)
     W_resid2_1, W_resid2_2 = (
-        arch.initialize_weights([3, 3, chan_conv3], _STD_DEV),
-        arch.initialize_weights([3, 3, chan_conv3], _STD_DEV))
+        arch.initialize_weights([3, 3, chan_conv3, chan_conv3], _STD_DEV),
+        arch.initialize_weights([3, 3, chan_conv3, chan_conv3], _STD_DEV))
     resid2 = arch.resid_block(resid1, W_resid2_1, W_resid2_2, tf.nn.elu, chan_conv3)
     W_resid3_1, W_resid3_2 = (
-        arch.initialize_weights([3, 3, chan_conv3], _STD_DEV),
-        arch.initialize_weights([3, 3, chan_conv3], _STD_DEV))
+        arch.initialize_weights([3, 3, chan_conv3, chan_conv3], _STD_DEV),
+        arch.initialize_weights([3, 3, chan_conv3, chan_conv3], _STD_DEV))
     resid3 = arch.resid_block(resid2, W_resid3_1, W_resid3_2, tf.nn.elu, chan_conv3)
     W_resid4_1, W_resid4_2 = (
-        arch.initialize_weights([3, 3, chan_conv3], _STD_DEV),
-        arch.initialize_weights([3, 3, chan_conv3], _STD_DEV))
+        arch.initialize_weights([3, 3, chan_conv3, chan_conv3], _STD_DEV),
+        arch.initialize_weights([3, 3, chan_conv3, chan_conv3], _STD_DEV))
     resid4 = arch.resid_block(resid3, W_resid4_1, W_resid4_2, tf.nn.elu, chan_conv3)
     W_resid5_1, W_resid5_2 = (
-        arch.initialize_weights([3, 3, chan_conv3], _STD_DEV),
-        arch.initialize_weights([3, 3, chan_conv3], _STD_DEV))
+        arch.initialize_weights([3, 3, chan_conv3, chan_conv3], _STD_DEV),
+        arch.initialize_weights([3, 3, chan_conv3, chan_conv3], _STD_DEV))
     resid5 = arch.resid_block(resid4, W_resid5_1, W_resid5_2, tf.nn.elu, chan_conv3)
 
     chan_deconv1 = 64
@@ -59,7 +59,7 @@ def SingleFrameSR(x):
     act5 = tf.nn.elu(deconv2)
 
     chan_conv4 = 3
-    W_conv4 = arch.initialize_weights([9, 9, chan_deconv2, chan_conv4])
+    W_conv4 = arch.initialize_weights([9, 9, chan_deconv2, chan_conv4], _STD_DEV)
     conv4 = arch.conv2d(act5, W_conv4, 1)
     conv4 = arch.instance_normalization(conv4, chan_conv4)
 
