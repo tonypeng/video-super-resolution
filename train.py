@@ -27,6 +27,7 @@ TRAIN_DATASET_PATH = '/home/ubuntu/data1/coco/images/train2014'
 VGG_MODEL_PATH = 'models/vgg/imagenet-vgg-verydeep-19.mat'
 #STYLE_IMAGE_PATH = 'runs/WhiteLine/style.jpg'
 CONTENT_IMAGE_SIZE = (256, 256) # (height, width)
+DOWNSCALED_CONTENT_IMAGE_SIZE = (128, 128) # (height, width)
 #STYLE_SCALE = 1.0
 MINI_BATCH_SIZE = 16
 #VALIDATION_IMAGE_PATH = 'runs/WhiteLine/content.jpg'
@@ -77,21 +78,8 @@ g = tf.Graph()
 with g.as_default(), g.device(DEVICE), tf.Session(
         config=tf.ConfigProto(allow_soft_placement=True)) as sess:
 
-    #style_input = tf.placeholder(tf.float32, (1,) + style_image.shape)
     content_batch = tf.placeholder(tf.float32, shape=batch_shape,
             name="input_content_batch")
-
-    # Pre-compute style gram matrices
-    #print("1. Pre-computing style Gram matrices...")
-    #style_net, style_layers = nets.vgg(VGG_MODEL_PATH, style_input)
-    #grams = {}
-    #for layer, _ in STYLE_LAYERS.items():
-    #    feature_maps = style_layers[layer].eval(
-    #            feed_dict={style_input: np.array([style_image])})
-    #    grams[layer] = utils.gram_matrix(feature_maps[0])
-    # Clean up
-    #style_net = None
-    #style_layers = None
 
     # Create content target
     print("2. Creating content target...")
@@ -101,7 +89,7 @@ with g.as_default(), g.device(DEVICE), tf.Session(
     # Construct transfer network
     print("3. Constructing style transfer network...")
     # transfer_net = nets.gatys(gatys_content_image.shape)
-    transfer_net = nets.SingleFrameSR(content_batch)
+    transfer_net = nets.SingleFrameSR(tf.image.resize_images(content_batch, DOWNSCALED_CONTENT_IMAGE_SIZE))
 
     # Set up losses
     print("4. Constructing loss network...")
