@@ -1,6 +1,9 @@
 # VGG-19 model
 models/vgg/imagenet-vgg-verydeep-19.mat
 
+# Output runs
+runs/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
