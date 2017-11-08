@@ -156,12 +156,6 @@ with g.as_default(), g.device(DEVICE), tf.Session(
                 utils.write_image(curr_styled_image, styled_output_path)
                 utils.write_image(curr_orig_image, orig_output_path)
 
-                #valid_styled_image = output_evaluator(transfer_net,
-                #        feed_dict={content_batch: np.array([validation_image]*MINI_BATCH_SIZE)})
-                #valid_output_path = utils.get_output_filepath(OUTPUT_PATH,
-                #        'valid', str(global_it_num))
-                utils.write_image(valid_styled_image[0], valid_output_path)
-
             if global_it_num % CHECKPOINT_ITERATIONS == 0:
                 utils.save_model_with_backup(sess, saver, MODEL_OUTPUT_PATH, MODEL_NAME)
             global_it += 1
