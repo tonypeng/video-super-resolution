@@ -14,13 +14,9 @@ import tensorflow as tf
 import utils
 from random import shuffle
 
-<<<<<<< HEAD
 CONTENT_WEIGHT = 1 
 STYLE_WEIGHT = 0
-=======
-CONTENT_WEIGHT = 5
-STYLE_WEIGHT = 85
->>>>>>> halfway done trainRNN.py
+
 DENOISE_WEIGHT = 5
 LEARNING_RATE = 1e-3
 EPOCHS = 2
@@ -29,25 +25,14 @@ DEVICE = '/gpu:0'
 <<<<<<< HEAD
 MODEL_OUTPUT_PATH = 'models/trained/SFSR'
 MODEL_NAME = 'model'
-TRAIN_DATASET_PATH = '/home/ubuntu/data1/coco/images/train2014'
+TRAIN_DATASET_PATH = '/home/ubuntu/ddataset/trainvideo'
 VGG_MODEL_PATH = 'models/vgg/imagenet-vgg-verydeep-19.mat'
 #STYLE_IMAGE_PATH = 'runs/WhiteLine/style.jpg'
 CONTENT_VIDEO_SIZE = (256, 256,30) # (height, width,frames)
 #STYLE_SCALE = 1.0
 MINI_BATCH_SIZE = 1 # training videos 1 by 1
-OUTPUT_PATH = 'runs/SFSR'
-=======
-MODEL_OUTPUT_PATH = 'models/trained/WhiteLine'
-MODEL_NAME = 'model'
-TRAIN_DATASET_PATH = '/home/ubuntu/dataset/trainvideo'
-VGG_MODEL_PATH = 'models/vgg/imagenet-vgg-verydeep-19.mat'
-#STYLE_IMAGE_PATH = 'runs/WhiteLine/style.jpg'
-CONTENT_VIDEO_SIZE = (256, 256,30) # (height, width,frames)
-STYLE_SCALE = 1.0
-MINI_BATCH_SIZE = 1 # training videos 1 by 1
-VALIDATION_IMAGE_PATH = 'runs/WhiteLine/content.jpg'
-OUTPUT_PATH = 'runs/WhiteLine'
->>>>>>> halfway done trainRNN.py
+OUTPUT_PATH = 'runs/MFSR'
+
 PREVIEW_ITERATIONS = 50
 CHECKPOINT_ITERATIONS = 500
 CONTENT_LAYER = 'relu4_2'
@@ -109,11 +94,7 @@ with g.as_default(), g.device(DEVICE), tf.Session(
          #       feed_dict={style_input: np.array([style_image])})
     #   grams[layer] = utils.gram_matrix(feature_maps[0])
     # Clean up
-<<<<<<< HEAD
-=======
-    style_net = None
-    style_layers = None
->>>>>>> halfway done trainRNN.py
+
 
     # Create content target
     print("2. Creating content target...")
@@ -194,15 +175,6 @@ with g.as_default(), g.device(DEVICE), tf.Session(
                 utils.write_image(curr_styled_image, styled_output_path)
                 utils.write_image(curr_orig_image, orig_output_path)
 
-<<<<<<< HEAD
-=======
-                valid_styled_image = output_evaluator(transfer_net,
-                        feed_dict={content_batch: np.array([validation_image]*MINI_BATCH_SIZE)})
-                valid_output_path = utils.get_output_filepath(OUTPUT_PATH,
-                        'valid', str(global_it_num))
-                utils.write_image(valid_styled_image[0], valid_output_path)
-
->>>>>>> halfway done trainRNN.py
             if global_it_num % CHECKPOINT_ITERATIONS == 0:
                 utils.save_model_with_backup(sess, saver, MODEL_OUTPUT_PATH, MODEL_NAME)
             global_it += 1
