@@ -16,7 +16,7 @@ def MFSR(p,x):
         # concat 3 different frames into 9 channels
         if i == 0 :
             Input[i] = tf.concat([p[i],x[i],p[i+1]],2)
-        else if i == FilmSize[0]-1:
+        elif i == FilmSize[0]-1:
             Input[i] = tf.concat([p[i-1],x[i],p[i]],2)
         else:
             Input[i] = tf.concat([p[i-1],x[i],p[i+1]],2)
