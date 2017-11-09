@@ -12,6 +12,7 @@ def read_image(path, mode='RGB', size=None):
         img = scipy.misc.imresize(img, size)
     return img
 
+def read_video 
 def write_image(img, path):
     img = np.clip(img, 0, 255).astype(np.uint8)
     scipy.misc.imsave(path, img)
