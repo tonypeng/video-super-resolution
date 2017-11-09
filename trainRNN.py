@@ -22,10 +22,9 @@ LEARNING_RATE = 1e-3
 EPOCHS = 2
 
 DEVICE = '/gpu:0'
-<<<<<<< HEAD
-MODEL_OUTPUT_PATH = 'models/trained/SFSR'
+MODEL_OUTPUT_PATH = 'models/trained/MFSR'
 MODEL_NAME = 'model'
-TRAIN_DATASET_PATH = '/home/ubuntu/ddataset/trainvideo'
+TRAIN_DATASET_PATH = '/home/ubuntu/dataset/trainvideo'
 VGG_MODEL_PATH = 'models/vgg/imagenet-vgg-verydeep-19.mat'
 #STYLE_IMAGE_PATH = 'runs/WhiteLine/style.jpg'
 CONTENT_VIDEO_SIZE = (256, 256,30) # (height, width,frames)
