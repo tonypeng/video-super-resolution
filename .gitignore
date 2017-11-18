@@ -1,3 +1,6 @@
+# all csv files
+*.csv
+
 # all raw data
 data/
 
