@@ -133,15 +133,15 @@ def SingleFrameSR(x):
     deconv2 = arch.instance_normalization(deconv2, chan_deconv2)
     act5 = tf.nn.elu(deconv2)
 
-    #chan_deconv3 = 16
-    #W_deconv3 = arch.initialize_weights([3, 3, chan_deconv3, chan_deconv2], _STD_DEV)
-    #deconv3 = arch.resizeconv2d(act5, W_deconv3, 2)
-    #deconv3 = arch.instance_normalization(deconv3, chan_deconv3)
-    #act7 = tf.nn.elu(deconv3)
+    chan_deconv3 = 16
+    W_deconv3 = arch.initialize_weights([3, 3, chan_deconv3, chan_deconv2], _STD_DEV)
+    deconv3 = arch.resizeconv2d(act5, W_deconv3, 2)
+    deconv3 = arch.instance_normalization(deconv3, chan_deconv3)
+    act6 = tf.nn.elu(deconv3)
 
     chan_deconv4 = 8
     W_deconv4 = arch.initialize_weights([3, 3, chan_deconv4, chan_deconv3], _STD_DEV)
-    deconv4 = arch.resizeconv2d(act6, W_deconv4, 2)
+    deconv4 = arch.resizeconv2d(act6, W_deconv4, 1)
     deconv4 = arch.instance_normalization(deconv4, chan_deconv4)
     act7 = tf.nn.elu(deconv4)
 
