@@ -12,6 +12,7 @@ def spatial_replication_padding(x, stride, output_shape, filter_shape):
     _, out_height, out_width, chan = output_shape
     filter_height, filter_width = filter_shape
 
+
     total_padding_height = (out_height * stride + filter_height - 1) - in_height
     total_padding_width = (out_width * stride + filter_width - 1) - in_width
 

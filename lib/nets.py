@@ -5,25 +5,36 @@ from . import arch, utils
 
 _STD_DEV = 0.1
 
-def MFSR(p,x):
+def MFSR(prev_p,x,post_p):
     # input p is the prediction, x is the original low quality video
     # film size should be of the shape: [frames, height, width , channlels]
-    FilmSize = utils.tensor_shape(x)
-    Input = np.zeros(FilmSize)
-    for i in range(FilmSize[0]):
-        x[i] = arch.spatial_replication_padding(x[i], 1, utils.tensor_shape(x[i]), (9, 9))
-        p[i] = arch.spatial_replication_padding(p[i], 1, utils.tensor_shape(p[i]), (9, 9))
+#    FilmSize = utils.tensor_shape(x)
+#    FilmList = list(FilmSize)
+ #   FilmList[3] = FilmList[3]*3
+  #  InputSize = tuple(FilmList)
+   # Input = tf.zeros(InputSize,tf.float32)
+   # xarray = x.eval(session=your_session)
+   # parray = p.eval(session=your_session)
+
+    # x= arch.spatial_replication_padding(x, 1, utils.tensor_shape(x), (9, 9))
+    # p= arch.spatial_replication_padding(p, 1, utils.tensor_shape(x), (9, 9))
+    '''    
     for i in range(FilmSize[0]):
         # concat 3 different frames into 9 channels
         if i == 0 :
+            print(utils.tensor_shape(Input[i]))
+            print(utils.tensor_shape(p[i]))
             Input[i] = tf.concat([p[i],x[i],p[i+1]],2)
         elif i == FilmSize[0]-1:
             Input[i] = tf.concat([p[i-1],x[i],p[i]],2)
         else:
             Input[i] = tf.concat([p[i-1],x[i],p[i+1]],2)
+    '''
+    # concact them along the channel dimension
+    Input = tf.concat([prev_p,x,post_p],3)
     chan_conv1 = 32
     W_conv1 = arch.initialize_weights([9, 9, 9, chan_conv1], _STD_DEV)
-    conv1 = arch.conv2d(Input, W_conv1, 1, border_mode='VALID')
+    conv1 = arch.conv2d(Input, W_conv1, 1)
     conv1 = arch.instance_normalization(conv1, chan_conv1)
     act1 = tf.nn.elu(conv1)
 
@@ -40,26 +51,26 @@ def MFSR(p,x):
     act3 = tf.nn.elu(conv3)
 
     W_resid1_1, W_resid1_2 = (
-        arch.initialize_weights([3, 3, chan_conv3], _STD_DEV),
-        arch.initialize_weights([3, 3, chan_conv3], _STD_DEV))
+        arch.initialize_weights([3, 3, chan_conv3, chan_conv3], _STD_DEV),
+        arch.initialize_weights([3, 3, chan_conv3, chan_conv3], _STD_DEV))
     resid1 = arch.resid_block(act3, W_resid1_1, W_resid1_2, tf.nn.elu, chan_conv3)
     W_resid2_1, W_resid2_2 = (
-        arch.initialize_weights([3, 3, chan_conv3], _STD_DEV),
-        arch.initialize_weights([3, 3, chan_conv3], _STD_DEV))
+        arch.initialize_weights([3, 3, chan_conv3, chan_conv3], _STD_DEV),
+        arch.initialize_weights([3, 3, chan_conv3, chan_conv3], _STD_DEV))
     resid2 = arch.resid_block(resid1, W_resid2_1, W_resid2_2, tf.nn.elu, chan_conv3)
     W_resid3_1, W_resid3_2 = (
-        arch.initialize_weights([3, 3, chan_conv3], _STD_DEV),
-        arch.initialize_weights([3, 3, chan_conv3], _STD_DEV))
+        arch.initialize_weights([3, 3, chan_conv3, chan_conv3], _STD_DEV),
+        arch.initialize_weights([3, 3, chan_conv3, chan_conv3], _STD_DEV))
     resid3 = arch.resid_block(resid2, W_resid3_1, W_resid3_2, tf.nn.elu, chan_conv3)
     W_resid4_1, W_resid4_2 = (
-        arch.initialize_weights([3, 3, chan_conv3], _STD_DEV),
-        arch.initialize_weights([3, 3, chan_conv3], _STD_DEV))
+        arch.initialize_weights([3, 3, chan_conv3, chan_conv3], _STD_DEV),
+        arch.initialize_weights([3, 3, chan_conv3, chan_conv3], _STD_DEV))
     resid4 = arch.resid_block(resid3, W_resid4_1, W_resid4_2, tf.nn.elu, chan_conv3)
     W_resid5_1, W_resid5_2 = (
-        arch.initialize_weights([3, 3, chan_conv3], _STD_DEV),
-        arch.initialize_weights([3, 3, chan_conv3], _STD_DEV))
+        arch.initialize_weights([3, 3, chan_conv3, chan_conv3], _STD_DEV),
+        arch.initialize_weights([3, 3, chan_conv3, chan_conv3], _STD_DEV))
     resid5 = arch.resid_block(resid4, W_resid5_1, W_resid5_2, tf.nn.elu, chan_conv3)
-
+    
     chan_deconv1 = 64
     W_deconv1 = arch.initialize_weights([3, 3, chan_deconv1, chan_conv3], _STD_DEV)
     deconv1 = arch.resizeconv2d(resid5, W_deconv1, 2)
@@ -72,10 +83,17 @@ def MFSR(p,x):
     deconv2 = arch.instance_normalization(deconv2, chan_deconv2)
     act5 = tf.nn.elu(deconv2)
 
+    chan_deconv3 = 16
+    W_deconv3 = arch.initialize_weights([3, 3, chan_deconv3, chan_deconv2], _STD_DEV)
+    deconv3 = arch.resizeconv2d(act5, W_deconv3, 2)
+    deconv3 = arch.instance_normalization(deconv3, chan_deconv3)
+    act6 = tf.nn.elu(deconv3)
+
+ 
     # back to 3 channels
     chan_conv4 = 3
-    W_conv4 = arch.initialize_weights([9, 9, chan_deconv2, chan_conv4])
-    conv4 = arch.conv2d(act5, W_conv4, 1)
+    W_conv4 = arch.initialize_weights([9, 9, chan_deconv3, chan_conv4],_STD_DEV)
+    conv4 = arch.conv2d(act6, W_conv4, 1)
     conv4 = arch.instance_normalization(conv4, chan_conv4)
 
     return tf.tanh(conv4) * 150.0 + 127.5
