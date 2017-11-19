@@ -37,6 +37,33 @@ def tensor_shape(t):
 def get_train_data_filepaths(path):
     return [os.path.join(path, f) for f in os.listdir(path)]
 
+def get_frame_data_filepaths(path,FRAME_SIZE):
+	"""Using the videos downloaded in `vid_dir`, produce decoded frames in
+  	`frame_dir`.
+  	"""
+  	# List the datasets
+  	imgPaths = []
+  	vid_dir = path
+  	d_sets = [f.path for f in os.scandir(vid_dir) if f.is_dir() ]
+  	# For each dataset
+  	for d_set in d_sets:
+  	# List the classes
+  	classes = [f.path for f in os.scandir(d_set) if f.is_dir() ]
+  	# For each class
+  	for class_ in classes:
+  		# List the clips
+  		clips = [f.path for f in os.scandir(class_) ]
+  		# For each clip, where clip is the path to the clip
+  		for clip in clips:
+  			images = [f.path for f in os.scandir(clip)]
+  			length = len(images)
+  			# only taking in images in multiple patches of FRAME_SIZE
+  			for i in range(int(length)//int(FRAME_SIZE) ):
+  				for j in range (FRAME_SIZE):
+  					imgPaths.append(images[i*FRAME_SIZE+j])
+  					print images[i*FRAME_SIZE+j]
+	return imgPaths
+
 
 def save_model_with_backup(sess, saver, model_output_path, model_name):
     model_filepath = os.path.join(model_output_path, model_name)

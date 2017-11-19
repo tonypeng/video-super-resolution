@@ -25,11 +25,13 @@ DEVICE = '/gpu:0'
 MODEL_OUTPUT_PATH = 'models/trained/MFSR'
 MODEL_NAME = 'model'
 TRAIN_DATASET_PATH = '/home/ubuntu/dataset/trainvideo'
+FRAME_DATASET_PATH = '/home/ubuntu/data1/youtubeFrames/'
 VGG_MODEL_PATH = 'models/vgg/imagenet-vgg-verydeep-19.mat'
 #STYLE_IMAGE_PATH = 'runs/WhiteLine/style.jpg'
-CONTENT_VIDEO_SIZE = (256, 256,30) # (height, width,frames)
+FRAME_SIZE = 30
+CONTENT_IMAGE_SIZE = (256, 256) # (height, width,frames)
+DOWNSCALED_CONTENT_IMAGE_SIZE = (128,128) # (height, width)
 #STYLE_SCALE = 1.0
-MINI_BATCH_SIZE = 1 # training videos 1 by 1
 OUTPUT_PATH = 'runs/MFSR'
 
 PREVIEW_ITERATIONS = 50
@@ -44,15 +46,15 @@ STYLE_LAYERS = {
     'relu5_1': 0.2,
 }
 
- # batch shape is (batch, height, width, channels)
-batch_shape = (MINI_BATCH_SIZE, ) + CONTENT_VIDEO_SIZE + (3, )
+ # batch shape is (height, width, channels, frames)
+batch_shape = (FRAME_SIZE, ) + CONTENT_IMAGE_SIZE + (3, )
 #style_image = utils.read_image(STYLE_IMAGE_PATH,
        # size=tuple(int(d * STYLE_SCALE) for d in CONTENT_VIDEO_SIZE))
 
-train_data = utils.get_train_data_filepaths(TRAIN_DATASET_PATH)
+# probs get all the starting file names of each 30 frames 
+train_data = utils.get_frame_data_filepaths(FRAME_DATASET_PATH,FRAME_SIZE)
 print("Training dataset loaded: " + str(len(train_data)) + " videos.")
 
-validation_image = utils.read_image(VALIDATION_IMAGE_PATH, size=CONTENT_VIDEO_SIZE)
 
 def evaluate_stylzr_output(t, feed_dict=None):
     return t.eval(feed_dict=feed_dict)
@@ -79,11 +81,10 @@ with g.as_default(), g.device(DEVICE), tf.Session(
         config=tf.ConfigProto(allow_soft_placement=True)) as sess:
 
     #style_input = tf.placeholder(tf.float32, (1,) + style_image.shape)
-    content_batch = tf.placeholder(tf.float32, shape=batch_shape,
-            name="input_content_batch")
     prediction_batch = tf.placeholder(tf.float32, shape=batch_shape,
             name="input_content_batch")
-
+    content_batch = tf.placeholder(tf.float32, shape=batch_shape,
+            name="input_content_batch")
     # Pre-compute style gram matrices
     #print("1. Pre-computing style Gram matrices...")
     #style_net, style_layers = nets.vgg(VGG_MODEL_PATH, style_input)
@@ -103,7 +104,8 @@ with g.as_default(), g.device(DEVICE), tf.Session(
     # Construct transfer network
     print("3. Constructing style transfer network...")
     # transfer_net = nets.gatys(gatys_content_image.shape)
-    transfer_net = nets.MFSR(prediction_batch,content_batch)
+    transfer_net = nets.MFSR(tf.image.resize_images(prediction_batch,DOWNSCALED_CONTENT_IMAGE_SIZE)
+        ,tf.image.resize_images(content_batch,DOWNSCALED_CONTENT_IMAGE_SIZE))
 
     # Set up losses
     print("4. Constructing loss network...")
@@ -124,7 +126,7 @@ with g.as_default(), g.device(DEVICE), tf.Session(
     loss_tv = (
         (tf.nn.l2_loss(transfer_net[:, 1:, :, :] - transfer_net[:, :batch_shape[1]-1, :, :]) / tf.to_float(tf.size(transfer_net[0, 1:, :, :]))
             + tf.nn.l2_loss(transfer_net[:, :, 1:, :] - transfer_net[:, :, :batch_shape[2]-1, :]) / tf.to_float(tf.size(transfer_net[0, :, 1:, :])))
-        / MINI_BATCH_SIZE
+        / FRAME_SIZE
     )
 
     loss = CONTENT_WEIGHT * loss_content + STYLE_WEIGHT * loss_style + DENOISE_WEIGHT * loss_tv
@@ -141,18 +143,17 @@ with g.as_default(), g.device(DEVICE), tf.Session(
     global_it = 0
     for n in range(EPOCHS):
         shuffle(train_data)
-        for s in range(0, len(train_data), MINI_BATCH_SIZE):
+        for s in range(0, len(train_data), FRAME_SIZE):
             global_it_num = global_it + 1
-            batch = np.array([utils.read_image(f, size=CONTENT_VIDEO_SIZE)
-                    for f in train_data[s:s+MINI_BATCH_SIZE]])
-            if len(batch) < MINI_BATCH_SIZE:
+            batch = np.array([utils.read_image(f, size=CONTENT_IMAGE_SIZE)
+                    for f in train_data[s:s+FRAME_SIZE-1]])
+            if len(batch) < FRAME_SIZE:
                 print(
                     "Skipping mini-batch because there are not enough samples.")
                 continue
             if s == 0 :
                 batchPrediction =  batch
             else:
-                tmp = batchPredicion
                 batchPrediction = output_evaluator(transfer_net,
                             feed_dict={prediction_batch: batchPrediction,content_batch: batch})
             _, curr_lotss = sess.run([optimize, loss],
@@ -163,7 +164,7 @@ with g.as_default(), g.device(DEVICE), tf.Session(
             if global_it_num % PREVIEW_ITERATIONS == 0:
 
                 curr_styled_images = output_evaluator(transfer_net,
-                        feed_dict={content_batch: batch})
+                        feed_dict={prediction_batch: batchPrediction,content_batch: batch})
                 # take the first images
                 curr_styled_image = curr_styled_images[0]
                 curr_orig_image = batch[0]

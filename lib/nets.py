@@ -7,6 +7,7 @@ _STD_DEV = 0.1
 
 def MFSR(p,x):
     # input p is the prediction, x is the original low quality video
+    # film size should be of the shape: [frames, height, width , channlels]
     FilmSize = utils.tensor_shape(x)
     Input = np.zeros(FilmSize)
     for i in range(FilmSize[0]):
@@ -20,7 +21,6 @@ def MFSR(p,x):
             Input[i] = tf.concat([p[i-1],x[i],p[i]],2)
         else:
             Input[i] = tf.concat([p[i-1],x[i],p[i+1]],2)
-
     chan_conv1 = 32
     W_conv1 = arch.initialize_weights([9, 9, 9, chan_conv1], _STD_DEV)
     conv1 = arch.conv2d(Input, W_conv1, 1, border_mode='VALID')
@@ -72,6 +72,7 @@ def MFSR(p,x):
     deconv2 = arch.instance_normalization(deconv2, chan_deconv2)
     act5 = tf.nn.elu(deconv2)
 
+    # back to 3 channels
     chan_conv4 = 3
     W_conv4 = arch.initialize_weights([9, 9, chan_deconv2, chan_conv4])
     conv4 = arch.conv2d(act5, W_conv4, 1)
