@@ -63,7 +63,8 @@ def get_frame_data_filepaths(path,FRAME_SIZE):
                         imgPaths.append(images[i*FRAME_SIZE+j])
                         # print(images[i*FRAME_SIZE+j])
     return imgPaths
-
+def get_original_image_filepaths(path):
+    
 
 def save_model_with_backup(sess, saver, model_output_path, model_name):
     model_filepath = os.path.join(model_output_path, model_name)
