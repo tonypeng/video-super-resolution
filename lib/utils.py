@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import fnmatch
 import scipy.misc
 import shutil
 import tensorflow as tf
@@ -64,7 +65,11 @@ def get_frame_data_filepaths(path,FRAME_SIZE):
                         # print(images[i*FRAME_SIZE+j])
     return imgPaths
 def get_original_image_filepaths(path):
-    
+    imgPaths=list()
+    for f in os.scandir(path):
+        if fnmatch.fnmatch(f.name,'orig_*.jpg'):
+            imgPaths.append(f.path)
+    return imgPaths
 
 def save_model_with_backup(sess, saver, model_output_path, model_name):
     model_filepath = os.path.join(model_output_path, model_name)
