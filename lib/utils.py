@@ -82,3 +82,7 @@ def save_model_with_backup(sess, saver, model_output_path, model_name):
                 model_meta_filepath + '.bak')
 
     saver.save(sess, model_filepath)
+def load_model(model_path):
+    
+   
+    
