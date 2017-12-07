@@ -81,8 +81,4 @@ def save_model_with_backup(sess, saver, model_output_path, model_name):
         shutil.copy2(model_meta_filepath,
                 model_meta_filepath + '.bak')
 
-    saver.save(sess, model_filepath)
-def load_model(model_path):
-    
-   
-    
+    saver.save(sess, model_filepath)    
