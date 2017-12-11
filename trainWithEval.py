@@ -8,7 +8,7 @@ by Leon Gatys, Alexander S Ecker, and Matthias Bethge.
 
 from lib import nets
 from lib import psnr
-from lib import ssil
+from lib import ssim
 import numpy as np
 import os
 import shutil
@@ -27,6 +27,7 @@ TEST_FRAME_DATASET_PATH='/home/ubuntu/data1/youtubeFramesTest/'
 FRAME_SIZE = 30
 CHECKPOINT_ITERATIONS = 500
 TEST_SIZE = 100
+TEST_OUTPUT_PATH = 'runs/SFSR2xWithEval/test'
 
 DEVICE = '/gpu:0'
 MODEL_OUTPUT_PATH = 'models/trained/SFSR2xWithEval'
@@ -39,7 +40,7 @@ DOWNSCALED_CONTENT_IMAGE_SIZE = (128,128) # (height, width)
 #STYLE_SCALE = 1.0
 MINI_BATCH_SIZE = 16
 #VALIDATION_IMAGE_PATH = 'runs/WhiteLine/content.jpg'
-OUTPUT_PATH = 'runs/test'
+OUTPUT_PATH = 'runs/SFSR2xWithEval/train'
 PREVIEW_ITERATIONS = 50
 TEST_ITERATIONS = 1
 CONTENT_LAYER = 'relu4_2'
@@ -125,7 +126,7 @@ with g.as_default(), g.device(DEVICE), tf.Session(
     #saver = tf.train.import_meta_graph('models/trained/SFSR/model.meta')
     #saver.restore(sess,'models/trained/SFSR/model')
     global_it = 0
-    LogFilePath = os.path.join(MODEL_OUTPUT_PATH+'score.log')
+    LogFilePath = os.path.join(MODEL_OUTPUT_PATH+'/score.log')
     f = open(LogFilePath,'w')
     for n in range(EPOCHS):
         shuffle(train_data)
@@ -158,7 +159,7 @@ with g.as_default(), g.device(DEVICE), tf.Session(
             if global_it_num % CHECKPOINT_ITERATIONS == 0:
                 utils.save_model_with_backup(sess, saver, MODEL_OUTPUT_PATH, MODEL_NAME)
             global_it += 1
-            if global_it_num % EVALUATION_ITERATIONS ==0:
+            if global_it_num % TEST_ITERATIONS ==0:
                 print("Evaluating...")
                 # read all test files
                 test_data = utils.get_frame_data_filepaths(TEST_FRAME_DATASET_PATH,FRAME_SIZE)
@@ -168,13 +169,20 @@ with g.as_default(), g.device(DEVICE), tf.Session(
                     originalImage = utils.read_image(test_data[k], size=CONTENT_IMAGE_SIZE)
                     inputImage = tf.image.resize_images(originalImage, DOWNSCALED_CONTENT_IMAGE_SIZE)
                     styledImage =  output_evaluator(transfer_net,
-                        feed_dict={content_batch: inputImage})
+                        feed_dict={content_batch: originalImage})
                     PSNR[k] = psnr.psnr(originalImage,styledImage)
                     SSIM[k] = ssim.ssim(originalImage,styledImage)
                 PSNRMean = np.mean(PSNR)
                 SSIMMean = np.mean(SSIMMean)
                 f.write('Iteration {0}, PSNR: {1}, SSIM: {3}'.
                     format(global_it_num,PSNRMean,SSIMMean))
+                styled_output_path = utils.get_output_filepath(TEST_OUTPUT_PATH,
+                        'styled', str(global_it_num))
+                orig_output_path = utils.get_output_filepath(TEST_OUTPUT_PATH,
+                        'orig', str(global_it_num))
+                utils.write_image(styledImage, styled_output_path)
+                utils.write_image(originalImage, orig_output_path)
+
 
     utils.save_model_with_backup(sess, saver, MODEL_OUTPUT_PATH, MODEL_NAME)
     f.close()
