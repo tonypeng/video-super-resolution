@@ -28,7 +28,7 @@ FRAME_SIZE = 30
 CHECKPOINT_ITERATIONS = 500
 TEST_SIZE = 50
 TEST_OUTPUT_PATH = 'runs/SFSR2xWithEval/test'
-TEST_ITERATIONS = 250
+TEST_ITERATIONS = 100
 
 DEVICE = '/gpu:0'
 MODEL_OUTPUT_PATH = 'models/trained/SFSR2xWithEval'
@@ -127,7 +127,7 @@ with g.as_default(), g.device(DEVICE), tf.Session(
     #saver.restore(sess,'models/trained/SFSR/model')
     global_it = 0
     LogFilePath = os.path.join(MODEL_OUTPUT_PATH+'/score.log')
-    f = open(LogFilePath,'w')
+    LogFilePath = 'SFSR2xWithEval.log'
     for n in range(EPOCHS):
         shuffle(train_data)
         for s in range(0, len(train_data), MINI_BATCH_SIZE):
@@ -180,8 +180,9 @@ with g.as_default(), g.device(DEVICE), tf.Session(
                     SSIM[k] = np.mean(tmpSSIM)
                 PSNRMean = np.mean(PSNR)
                 SSIMMean = np.mean(SSIM)
-                f.write('Iteration {0}, PSNR: {1}, SSIM: {2}'.
-                    format(global_it_num,PSNRMean,SSIMMean))
+                with open(LogFilePath,'a') as f:
+                    f.write('Iteration {0}, PSNR: {1}, SSIM: {2}\n'.
+                        format(global_it_num,PSNRMean,SSIMMean))
                 print('{0} evluation done.'.format(global_it_num))
                 styled_output_path = utils.get_output_filepath(TEST_OUTPUT_PATH,
                         'styled', str(global_it_num))
