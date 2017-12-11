@@ -26,8 +26,9 @@ EPOCHS = 2
 TEST_FRAME_DATASET_PATH='/home/ubuntu/data1/youtubeFramesTest/'
 FRAME_SIZE = 30
 CHECKPOINT_ITERATIONS = 500
-TEST_SIZE = 100
+TEST_SIZE = 50
 TEST_OUTPUT_PATH = 'runs/SFSR2xWithEval/test'
+TEST_ITERATIONS = 250
 
 DEVICE = '/gpu:0'
 MODEL_OUTPUT_PATH = 'models/trained/SFSR2xWithEval'
@@ -42,7 +43,6 @@ MINI_BATCH_SIZE = 30
 #VALIDATION_IMAGE_PATH = 'runs/WhiteLine/content.jpg'
 OUTPUT_PATH = 'runs/SFSR2xWithEval/train'
 PREVIEW_ITERATIONS = 50
-TEST_ITERATIONS = 1
 CONTENT_LAYER = 'relu4_2'
 # layer: w_l
 STYLE_LAYERS = {
@@ -120,7 +120,7 @@ with g.as_default(), g.device(DEVICE), tf.Session(
     optimize = (tf.train.AdamOptimizer(learning_rate=LEARNING_RATE)
                     .minimize(loss))
 
-    sess.run(tf.initialize_all_variables())
+    sess.run(tf.global_variables_initializer())
 
     saver = tf.train.Saver()
     #saver = tf.train.import_meta_graph('models/trained/SFSR/model.meta')
@@ -165,22 +165,21 @@ with g.as_default(), g.device(DEVICE), tf.Session(
                 test_data = utils.get_frame_data_filepaths(TEST_FRAME_DATASET_PATH,FRAME_SIZE)
                 PSNR = np.zeros(TEST_SIZE)
                 SSIM = np.zeros(TEST_SIZE)
+                s = 0
                 for k in range(TEST_SIZE):
-                    for s in range(0, len(test_data), FRAME_SIZE):
-                        batchTest = np.array([utils.read_image(f, size=CONTENT_IMAGE_SIZE)
-                            for f in test_data[s:s+FRAME_SIZE]])
-                        styleTest = output_evaluator(transfer_net,
-                            feed_dict={content_batch: batch})
-                        tmpPSNR = np.zeros(FRAME_SIZE)
-                        tmpSSIM = np.zeros(FRAME_SIZE)
-                        for t in range(FRAME_SIZE):
-                            tmpPSNR[t] = psnr.psnr(batchTest[t],styleTest[t])
-                            tmpSSIM[t] = ssim.ssim(batchTest[t],styleTest[t])
-
+                # actual test size = TEST_SIE x FRAME_SIZE
+                    batchTest = np.array([utils.read_image(f, size=CONTENT_IMAGE_SIZE)
+                        for f in test_data[s:s+FRAME_SIZE]])
+                    styleTest = output_evaluator(transfer_net,feed_dict={content_batch: batch})
+                    tmpPSNR = np.zeros(FRAME_SIZE)
+                    tmpSSIM = np.zeros(FRAME_SIZE)
+                    for t in range(FRAME_SIZE):
+                        tmpPSNR[t] = psnr.psnr(batchTest[t],styleTest[t])
+                        tmpSSIM[t] = ssim.ssim_exact(batchTest[t],styleTest[t])
                     PSNR[k] = np.mean(tmpPSNR)
                     SSIM[k] = np.mean(tmpSSIM)
                 PSNRMean = np.mean(PSNR)
-                SSIMMean = np.mean(SSIMMean)
+                SSIMMean = np.mean(SSIM)
                 f.write('Iteration {0}, PSNR: {1}, SSIM: {2}'.
                     format(global_it_num,PSNRMean,SSIMMean))
                 print('{0} evluation done.'.format(global_it_num))
@@ -188,8 +187,8 @@ with g.as_default(), g.device(DEVICE), tf.Session(
                         'styled', str(global_it_num))
                 orig_output_path = utils.get_output_filepath(TEST_OUTPUT_PATH,
                         'orig', str(global_it_num))
-                utils.write_image(styledImage, styled_output_path)
-                utils.write_image(originalImage, orig_output_path)
+                utils.write_image(styleTest[0], styled_output_path)
+                utils.write_image(batchTest[0], orig_output_path)
 
 
     utils.save_model_with_backup(sess, saver, MODEL_OUTPUT_PATH, MODEL_NAME)

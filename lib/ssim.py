@@ -15,11 +15,16 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+import sys
 import numpy
 from scipy.ndimage import gaussian_filter
 
 from numpy.lib.stride_tricks import as_strided as ast
+from scipy import signal
+from scipy import ndimage
+
+from lib import gauss
+
 
 """
 Hat tip: http://stackoverflow.com/a/5078155/1828289
@@ -33,9 +38,43 @@ def block_view(A, block=(3, 3)):
     shape = (A.shape[0]/ block[0], A.shape[1]/ block[1])+ block
     strides = (block[0]* A.strides[0], block[1]* A.strides[1])+ A.strides
     return ast(A, shape= shape, strides= strides)
+def ssim(img1, img2, cs_map=False):
+    """Return the Structural Similarity Map corresponding to input images img1 
+    and img2 (images are assumed to be uint8)
+    
+    This function attempts to mimic precisely the functionality of ssim.m a 
+    MATLAB provided by the author's of SSIM
+    https://ece.uwaterloo.ca/~z70wang/research/ssim/ssim_index.m
+    """
+    img1 = img1.astype(numpy.float64)
+    img2 = img2.astype(numpy.float64)
+    size = 11
+    sigma = 1.5
+    window = gauss.fspecial_gauss(size, sigma)
+    K1 = 0.01
+    K2 = 0.03
+    L = 255 #bitdepth of image
+    C1 = (K1*L)**2
+    C2 = (K2*L)**2
+    mu1 = signal.fftconvolve(window, img1, mode='valid')
+    mu2 = signal.fftconvolve(window, img2, mode='valid')
+    mu1_sq = mu1*mu1
+    mu2_sq = mu2*mu2
+    mu1_mu2 = mu1*mu2
+    sigma1_sq = signal.fftconvolve(window, img1*img1, mode='valid') - mu1_sq
+    sigma2_sq = signal.fftconvolve(window, img2*img2, mode='valid') - mu2_sq
+    sigma12 = signal.fftconvolve(window, img1*img2, mode='valid') - mu1_mu2
+    if cs_map:
+        return (((2*mu1_mu2 + C1)*(2*sigma12 + C2))/((mu1_sq + mu2_sq + C1)*
+                    (sigma1_sq + sigma2_sq + C2)), 
+                (2.0*sigma12 + C2)/(sigma1_sq + sigma2_sq + C2))
+    else:
+        return ((2*mu1_mu2 + C1)*(2*sigma12 + C2))/((mu1_sq + mu2_sq + C1)*
+                    (sigma1_sq + sigma2_sq + C2))
 
 
-def ssim(img1, img2, C1=0.01**2, C2=0.03**2):
+
+def ssimOld(img1, img2, C1=0.01**2, C2=0.03**2):
 
     bimg1 = block_view(img1, (4,4))
     bimg2 = block_view(img2, (4,4))
