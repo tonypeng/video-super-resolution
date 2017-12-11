@@ -38,7 +38,7 @@ VGG_MODEL_PATH = 'models/vgg/imagenet-vgg-verydeep-19.mat'
 CONTENT_IMAGE_SIZE =(256,256) # (height, width)
 DOWNSCALED_CONTENT_IMAGE_SIZE = (128,128) # (height, width)
 #STYLE_SCALE = 1.0
-MINI_BATCH_SIZE = 16
+MINI_BATCH_SIZE = 30
 #VALIDATION_IMAGE_PATH = 'runs/WhiteLine/content.jpg'
 OUTPUT_PATH = 'runs/SFSR2xWithEval/train'
 PREVIEW_ITERATIONS = 50
@@ -166,16 +166,24 @@ with g.as_default(), g.device(DEVICE), tf.Session(
                 PSNR = np.zeros(TEST_SIZE)
                 SSIM = np.zeros(TEST_SIZE)
                 for k in range(TEST_SIZE):
-                    originalImage = utils.read_image(test_data[k], size=CONTENT_IMAGE_SIZE)
-                    inputImage = tf.image.resize_images(originalImage, DOWNSCALED_CONTENT_IMAGE_SIZE)
-                    styledImage =  output_evaluator(transfer_net,
-                        feed_dict={content_batch: originalImage})
-                    PSNR[k] = psnr.psnr(originalImage,styledImage)
-                    SSIM[k] = ssim.ssim(originalImage,styledImage)
+                    for s in range(0, len(test_data), FRAME_SIZE):
+                        batchTest = np.array([utils.read_image(f, size=CONTENT_IMAGE_SIZE)
+                            for f in test_data[s:s+FRAME_SIZE]])
+                        styleTest = output_evaluator(transfer_net,
+                            feed_dict={content_batch: batch})
+                        tmpPSNR = np.zeros(FRAME_SIZE)
+                        tmpSSIM = np.zeros(FRAME_SIZE)
+                        for t in range(FRAME_SIZE):
+                            tmpPSNR[t] = psnr.psnr(batchTest[t],styleTest[t])
+                            tmpSSIM[t] = ssim.ssim(batchTest[t],styleTest[t])
+
+                    PSNR[k] = np.mean(tmpPSNR)
+                    SSIM[k] = np.mean(tmpSSIM)
                 PSNRMean = np.mean(PSNR)
                 SSIMMean = np.mean(SSIMMean)
-                f.write('Iteration {0}, PSNR: {1}, SSIM: {3}'.
+                f.write('Iteration {0}, PSNR: {1}, SSIM: {2}'.
                     format(global_it_num,PSNRMean,SSIMMean))
+                print('{0} evluation done.'.format(global_it_num))
                 styled_output_path = utils.get_output_filepath(TEST_OUTPUT_PATH,
                         'styled', str(global_it_num))
                 orig_output_path = utils.get_output_filepath(TEST_OUTPUT_PATH,
