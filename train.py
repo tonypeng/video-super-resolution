@@ -13,7 +13,8 @@ import shutil
 import tensorflow as tf
 from lib import utils
 from random import shuffle
-
+import logging
+logging.basicConfig(filename='example.log',level=logging.DEBUG)
 CONTENT_WEIGHT = 1 
 STYLE_WEIGHT = 0
 DENOISE_WEIGHT = 5
@@ -113,7 +114,8 @@ with g.as_default(), g.device(DEVICE), tf.Session(
 
     sess.run(tf.initialize_all_variables())
 
-    saver = tf.train.Saver()
+    #saver = tf.train.Saver()
+    saver = tf.train.import_meta_graph('models/trained/SFSR/model.meta')
     saver.restore(sess,'models/trained/SFSR/model')
     global_it = 0
     for n in range(EPOCHS):

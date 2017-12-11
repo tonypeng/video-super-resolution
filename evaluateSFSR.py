@@ -23,7 +23,8 @@ EPOCHS = 2
 DEVICE = '/gpu:0'
 MODEL_OUTPUT_PATH = 'models/trained/SFSR'
 META_PATH='models/trained/SFSR/model.meta'
-MODEL_PATH='models/trained/SFSR/'
+MODEL_PATH='models/trained/SFSR/model'
+CHECKPOINT_PATH='models/trained/SFSR/checkpoint'
 MODEL_NAME='SFSR2x'
 TRAIN_DATASET_PATH = '/home/ubuntu/data1/coco/images/train2014'
 TEST_FRAME_DATASET_PATH='/home/ubuntu/data1/youtubeFramesTest/'
@@ -80,7 +81,8 @@ output_evaluator = evaluate_stylzr_output
 # End overrides for Gatys style transfer
 
 g = tf.Graph()
-with g.as_default(), tf.Session() as sess:
+with g.as_default(), g.device(DEVICE),tf.Session(
+    config=tf.ConfigProto(allow_soft_placement=True)) as sess:
 
     content_batch = tf.placeholder(tf.float32, shape=batch_shape,
             name="input_content_batch")
@@ -116,8 +118,12 @@ with g.as_default(), tf.Session() as sess:
                     .minimize(loss))
 
     sess.run(tf.global_variables_initializer())
+    #saver = tf.train.Saver()
     saver = tf.train.import_meta_graph(META_PATH)
-    saver.restore(sess, tf.train.latest_checkpoint(MODEL_PATH))
+    #reader = tf.train.NewCheckpointReader(CHECKPOINT_PATH)
+    #print('reder:\n', reader)
+    input("Press Enter to continue...")
+    saver.restore(sess, MODEL_PATH)
     global_it = 0
     while global_it < TEST_SIZE:
         for s in range(0, len(train_data), MINI_BATCH_SIZE):
