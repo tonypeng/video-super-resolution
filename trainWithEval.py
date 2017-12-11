@@ -23,12 +23,15 @@ DENOISE_WEIGHT = 5
 LEARNING_RATE = 1e-3
 EPOCHS = 2
 
-DEVICE = '/gpu:0'
-MODEL_OUTPUT_PATH = 'models/trained/test'
-MODEL_NAME = 'model'
-TRAIN_DATASET_PATH = '/home/ubuntu/data1/coco/images/train2014'
 TEST_FRAME_DATASET_PATH='/home/ubuntu/data1/youtubeFramesTest/'
 FRAME_SIZE = 30
+CHECKPOINT_ITERATIONS = 500
+TEST_SIZE = 100
+
+DEVICE = '/gpu:0'
+MODEL_OUTPUT_PATH = 'models/trained/SFSR2xWithEval'
+MODEL_NAME = 'model'
+TRAIN_DATASET_PATH = '/home/ubuntu/data1/coco/images/train2014'
 VGG_MODEL_PATH = 'models/vgg/imagenet-vgg-verydeep-19.mat'
 #STYLE_IMAGE_PATH = 'runs/WhiteLine/style.jpg'
 CONTENT_IMAGE_SIZE =(256,256) # (height, width)
@@ -38,7 +41,6 @@ MINI_BATCH_SIZE = 16
 #VALIDATION_IMAGE_PATH = 'runs/WhiteLine/content.jpg'
 OUTPUT_PATH = 'runs/test'
 PREVIEW_ITERATIONS = 50
-CHECKPOINT_ITERATIONS = 500
 TEST_ITERATIONS = 1
 CONTENT_LAYER = 'relu4_2'
 # layer: w_l
@@ -123,6 +125,8 @@ with g.as_default(), g.device(DEVICE), tf.Session(
     #saver = tf.train.import_meta_graph('models/trained/SFSR/model.meta')
     #saver.restore(sess,'models/trained/SFSR/model')
     global_it = 0
+    LogFilePath = os.path.join(MODEL_OUTPUT_PATH+'score.log')
+    f = open(LogFilePath,'w')
     for n in range(EPOCHS):
         shuffle(train_data)
         for s in range(0, len(train_data), MINI_BATCH_SIZE):
@@ -155,9 +159,23 @@ with g.as_default(), g.device(DEVICE), tf.Session(
                 utils.save_model_with_backup(sess, saver, MODEL_OUTPUT_PATH, MODEL_NAME)
             global_it += 1
             if global_it_num % EVALUATION_ITERATIONS ==0:
-                print("Testing...")
+                print("Evaluating...")
                 # read all test files
-                test_data = utils.get_frame_data_filepaths(TEST_FRAME_DATASET_PATH,FRAME_SIZE) 
-                
+                test_data = utils.get_frame_data_filepaths(TEST_FRAME_DATASET_PATH,FRAME_SIZE)
+                PSNR = np.zeros(TEST_SIZE)
+                SSIM = np.zeros(TEST_SIZE)
+                for k in range(TEST_SIZE):
+                    originalImage = utils.read_image(test_data[k], size=CONTENT_IMAGE_SIZE)
+                    inputImage = tf.image.resize_images(originalImage, DOWNSCALED_CONTENT_IMAGE_SIZE)
+                    styledImage =  output_evaluator(transfer_net,
+                        feed_dict={content_batch: inputImage})
+                    PSNR[k] = psnr.psnr(originalImage,styledImage)
+                    SSIM[k] = ssim.ssim(originalImage,styledImage)
+                PSNRMean = np.mean(PSNR)
+                SSIMMean = np.mean(SSIMMean)
+                f.write('Iteration {0}, PSNR: {1}, SSIM: {3}'.
+                    format(global_it_num,PSNRMean,SSIMMean))
+
     utils.save_model_with_backup(sess, saver, MODEL_OUTPUT_PATH, MODEL_NAME)
+    f.close()
 print("7: Profit!")
