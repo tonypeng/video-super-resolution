@@ -27,11 +27,12 @@ TEST_FRAME_DATASET_PATH='/home/ubuntu/data1/youtubeFramesTest/'
 FRAME_SIZE = 30
 CHECKPOINT_ITERATIONS = 500
 TEST_SIZE = 50
-TEST_OUTPUT_PATH = 'runs/SFSR2xWithEval/test'
+TEST_OUTPUT_PATH = 'runs/SFSR2xWithEval2/test'
 TEST_ITERATIONS = 100
+LogFilePath = 'SFSR2xWithEval2.log'
 
 DEVICE = '/gpu:0'
-MODEL_OUTPUT_PATH = 'models/trained/SFSR2xWithEval'
+MODEL_OUTPUT_PATH = 'models/trained/SFSR2xWithEval2'
 MODEL_NAME = 'model'
 TRAIN_DATASET_PATH = '/home/ubuntu/data1/coco/images/train2014'
 VGG_MODEL_PATH = 'models/vgg/imagenet-vgg-verydeep-19.mat'
@@ -41,7 +42,7 @@ DOWNSCALED_CONTENT_IMAGE_SIZE = (128,128) # (height, width)
 #STYLE_SCALE = 1.0
 MINI_BATCH_SIZE = 30
 #VALIDATION_IMAGE_PATH = 'runs/WhiteLine/content.jpg'
-OUTPUT_PATH = 'runs/SFSR2xWithEval/train'
+OUTPUT_PATH = 'runs/SFSR2xWithEval2/train'
 PREVIEW_ITERATIONS = 50
 CONTENT_LAYER = 'relu4_2'
 # layer: w_l
@@ -126,8 +127,6 @@ with g.as_default(), g.device(DEVICE), tf.Session(
     #saver = tf.train.import_meta_graph('models/trained/SFSR/model.meta')
     #saver.restore(sess,'models/trained/SFSR/model')
     global_it = 0
-    LogFilePath = os.path.join(MODEL_OUTPUT_PATH+'/score.log')
-    LogFilePath = 'SFSR2xWithEval.log'
     for n in range(EPOCHS):
         shuffle(train_data)
         for s in range(0, len(train_data), MINI_BATCH_SIZE):

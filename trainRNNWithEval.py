@@ -6,15 +6,15 @@ Implementation of the papers "Perceptual Losses for Real-Time Style Transfer and
 by Justin Johnson, Alexandre Alahi, and Li Fei-Fei and "A Neural Algorithm of Artistic Style"
 by Leon Gatys, Alexander S Ecker, and Matthias Bethge.
 """
-
 from lib import nets
+from lib import psnr
+from lib import ssim
 import numpy as np
 import os
 import shutil
 import tensorflow as tf
 from lib import utils
 from random import shuffle
-
 CONTENT_WEIGHT = 1 
 STYLE_WEIGHT = 0
 
@@ -25,12 +25,13 @@ EPOCHS = 2
 TEST_FRAME_DATASET_PATH='/home/ubuntu/data1/youtubeFramesTest/'
 FRAME_SIZE = 30
 CHECKPOINT_ITERATIONS = 500
-TEST_SIZE = 1
-TEST_OUTPUT_PATH = 'runs/MFSR2xWithEval/test'
-TEST_ITERATIONS = 1
+TEST_SIZE = 50
+TEST_OUTPUT_PATH = 'runs/MFSR2xWithEval2/test'
+TEST_ITERATIONS = 100
+LogFilePath = 'MFSR2xWithEval2.log'
 
 DEVICE = '/gpu:0'
-MODEL_OUTPUT_PATH = 'models/trained/MFSR2xWithEval'
+MODEL_OUTPUT_PATH = 'models/trained/MFSR2xWithEval2'
 MODEL_NAME = 'model'
 TRAIN_DATASET_PATH = '/home/ubuntu/dataset/trainvideo'
 FRAME_DATASET_PATH = '/home/ubuntu/data1/youtubeFrames/'
@@ -40,7 +41,7 @@ FRAME_SIZE = 30
 CONTENT_IMAGE_SIZE = (256, 256) # (height, width,frames)
 DOWNSCALED_CONTENT_IMAGE_SIZE = (128,128) # (height, width)
 #STYLE_SCALE = 1.0
-OUTPUT_PATH = 'runs/MFSR2xWithEval/train'
+OUTPUT_PATH = 'runs/MFSR2xWithEval2/train'
 
 PREVIEW_ITERATIONS = 50
 CHECKPOINT_ITERATIONS = 500
@@ -156,7 +157,6 @@ with g.as_default(), g.device(DEVICE), tf.Session(
     saver = tf.train.Saver()
     
     global_it = 0
-     LogFilePath = 'MFSR2xWithEval.log'
     for n in range(EPOCHS):
         shuffle(train_data)
         for s in range(0, len(train_data), FRAME_SIZE):
@@ -220,7 +220,25 @@ with g.as_default(), g.device(DEVICE), tf.Session(
                 # actual test size = TEST_SIE x FRAME_SIZE
                     batchTest = np.array([utils.read_image(f, size=CONTENT_IMAGE_SIZE)
                         for f in test_data[s:s+FRAME_SIZE]])
-                    styleTest = output_evaluator(transfer_net,feed_dict={content_batch: batch})
+                    
+                    prevBatchPrediction = np.array(batchTest)
+                    postBatchPrediction = np.array(batchTest)
+                    
+                    batchPrediction = batchTest 
+                    # create the prev_prediction_batch & post_prediction_batch
+                    for i in range(FRAME_SIZE):
+                        if i ==0:
+                            prevBatchPrediction[i]=batchPrediction[i]
+                            postBatchPrediction[i]=batchPrediction[i+1] 
+                        elif i == FRAME_SIZE-1:
+                            prevBatchPrediction[i]=batchPrediction[i-1]
+                            postBatchPrediction[i]=batchPrediction[i] 
+                        else:
+                            prevBatchPrediction[i]=batchPrediction[i-1]
+                            postBatchPrediction[i]=batchPrediction[i+1] 
+                    styleTest = output_evaluator(transfer_net,
+                        feed_dict={prev_prediction_batch: prevBatchPrediction, 
+                        content_batch: batch,post_prediction_batch:postBatchPrediction })
                     tmpPSNR = np.zeros(FRAME_SIZE)
                     tmpSSIM = np.zeros(FRAME_SIZE)
                     for t in range(FRAME_SIZE):
@@ -244,4 +262,3 @@ with g.as_default(), g.device(DEVICE), tf.Session(
     utils.save_model_with_backup(sess, saver, MODEL_OUTPUT_PATH, MODEL_NAME)
 print("7: Profit!")
 
-#>>>>>>> f7cc0ea291c0db652929313cd7570258b37e58e2
