@@ -220,6 +220,7 @@ with g.as_default(), g.device(DEVICE), tf.Session(
                 # actual test size = TEST_SIE x FRAME_SIZE
                     batchTest = np.array([utils.read_image(f, size=CONTENT_IMAGE_SIZE)
                         for f in test_data[s:s+FRAME_SIZE]])
+                    s = s+ FRAME_SIZE
                     
                     prevBatchPrediction = np.array(batchTest)
                     postBatchPrediction = np.array(batchTest)

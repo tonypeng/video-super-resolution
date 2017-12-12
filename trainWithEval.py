@@ -169,6 +169,7 @@ with g.as_default(), g.device(DEVICE), tf.Session(
                 # actual test size = TEST_SIE x FRAME_SIZE
                     batchTest = np.array([utils.read_image(f, size=CONTENT_IMAGE_SIZE)
                         for f in test_data[s:s+FRAME_SIZE]])
+                    s = s + FRAME_SIZE
                     styleTest = output_evaluator(transfer_net,feed_dict={content_batch: batch})
                     tmpPSNR = np.zeros(FRAME_SIZE)
                     tmpSSIM = np.zeros(FRAME_SIZE)
