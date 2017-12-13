@@ -27,7 +27,7 @@ FRAME_SIZE = 30
 CHECKPOINT_ITERATIONS = 500
 TEST_SIZE = 50
 TEST_OUTPUT_PATH = 'runs/MFSR2xWithEval2/test'
-TEST_ITERATIONS = 100
+TEST_ITERATIONS =100
 LogFilePath = 'MFSR2xWithEval2.log'
 
 DEVICE = '/gpu:0'
@@ -207,7 +207,8 @@ with g.as_default(), g.device(DEVICE), tf.Session(
                 utils.write_image(curr_orig_image, orig_output_path)
 
             if global_it_num % CHECKPOINT_ITERATIONS == 0:
-                utils.save_model_with_backup(sess, saver, MODEL_OUTPUT_PATH, MODEL_NAME)
+                saver.save(sess, MODEL_OUTPUT_PATH, global_step=global_it_num)
+                #utils.save_model_with_backup(sess, saver, MODEL_OUTPUT_PATH, MODEL_NAME)
             global_it += 1
             if global_it_num % TEST_ITERATIONS ==0:
                 print("Evaluating...")
@@ -239,7 +240,14 @@ with g.as_default(), g.device(DEVICE), tf.Session(
                             postBatchPrediction[i]=batchPrediction[i+1] 
                     styleTest = output_evaluator(transfer_net,
                         feed_dict={prev_prediction_batch: prevBatchPrediction, 
-                        content_batch: batch,post_prediction_batch:postBatchPrediction })
+                        content_batch: batchTest,post_prediction_batch:postBatchPrediction })
+                    styled_output_path = utils.get_output_filepath(TEST_OUTPUT_PATH,
+                        'styled'+str(global_it_num),str(k))
+                    orig_output_path = utils.get_output_filepath(TEST_OUTPUT_PATH,
+                        'orig'+str(global_it_num),str(k))
+                    utils.write_image(styleTest[0], styled_output_path)
+                    utils.write_image(batchTest[0], orig_output_path)
+                
                     tmpPSNR = np.zeros(FRAME_SIZE)
                     tmpSSIM = np.zeros(FRAME_SIZE)
                     for t in range(FRAME_SIZE):
@@ -253,13 +261,7 @@ with g.as_default(), g.device(DEVICE), tf.Session(
                     f.write('Iteration {0}, PSNR: {1}, SSIM: {2}\n'.
                         format(global_it_num,PSNRMean,SSIMMean))
                 print('{0} evluation done.'.format(global_it_num))
-                styled_output_path = utils.get_output_filepath(TEST_OUTPUT_PATH,
-                        'styled', str(global_it_num))
-                orig_output_path = utils.get_output_filepath(TEST_OUTPUT_PATH,
-                        'orig', str(global_it_num))
-                utils.write_image(styleTest[0], styled_output_path)
-                utils.write_image(batchTest[0], orig_output_path)
-
-    utils.save_model_with_backup(sess, saver, MODEL_OUTPUT_PATH, MODEL_NAME)
+               
+    # utils.save_model_with_backup(sess, saver, MODEL_OUTPUT_PATH, MODEL_NAME)
 print("7: Profit!")
 

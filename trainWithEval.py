@@ -170,7 +170,15 @@ with g.as_default(), g.device(DEVICE), tf.Session(
                     batchTest = np.array([utils.read_image(f, size=CONTENT_IMAGE_SIZE)
                         for f in test_data[s:s+FRAME_SIZE]])
                     s = s + FRAME_SIZE
-                    styleTest = output_evaluator(transfer_net,feed_dict={content_batch: batch})
+                    styleTest = output_evaluator(transfer_net,feed_dict={content_batch: batchTest})
+                    styled_output_path = utils.get_output_filepath(TEST_OUTPUT_PATH,
+                            'styled'+str(global_it_num),str(k))
+                    orig_output_path = utils.get_output_filepath(TEST_OUTPUT_PATH,
+                            'orig'+str(global_it_num),str(k))
+                    utils.write_image(styleTest[0], styled_output_path)
+                    utils.write_image(batchTest[0], orig_output_path)
+
+
                     tmpPSNR = np.zeros(FRAME_SIZE)
                     tmpSSIM = np.zeros(FRAME_SIZE)
                     for t in range(FRAME_SIZE):
@@ -184,14 +192,6 @@ with g.as_default(), g.device(DEVICE), tf.Session(
                     f.write('Iteration {0}, PSNR: {1}, SSIM: {2}\n'.
                         format(global_it_num,PSNRMean,SSIMMean))
                 print('{0} evluation done.'.format(global_it_num))
-                styled_output_path = utils.get_output_filepath(TEST_OUTPUT_PATH,
-                        'styled', str(global_it_num))
-                orig_output_path = utils.get_output_filepath(TEST_OUTPUT_PATH,
-                        'orig', str(global_it_num))
-                utils.write_image(styleTest[0], styled_output_path)
-                utils.write_image(batchTest[0], orig_output_path)
-
-
     utils.save_model_with_backup(sess, saver, MODEL_OUTPUT_PATH, MODEL_NAME)
     f.close()
 print("7: Profit!")
